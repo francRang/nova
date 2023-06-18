@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"text/tabwriter"
 
@@ -180,7 +181,8 @@ func (output Output) Print(format string, wide, showOld bool) {
 		}
 		separator += "=========\t======\t===\t=========="
 		fmt.Fprintln(w, separator)
-
+		// Sort here
+		sortByField(output.HelmReleases, "installed")
 		for _, release := range output.HelmReleases {
 			if (!output.IncludeAll && release.Latest.Version == "") || (showOld && !release.IsOld) {
 				continue
@@ -200,6 +202,17 @@ func (output Output) Print(format string, wide, showOld bool) {
 		w.Flush()
 	default:
 		klog.Errorf("Output format is not supported. The supported formats are json and table only")
+	}
+}
+
+func sortByField(releases []ReleaseOutput, fieldToSortBy string) {
+	switch fieldToSortBy {
+	case "installed":
+		sort.Slice(releases, func(i, j int) bool {
+			return releases[i].Installed.Version < releases[j].Installed.Version // use ">" if you want descending order
+		})
+	default:
+		klog.Errorf("Sort by field is not supported. The supported formats are latest and installed only")
 	}
 }
 
